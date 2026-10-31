@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PAT MAJOR - The Cosmic Entity</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#02020a;color:#fff;font-family:'Cairo',sans-serif;min-height:100vh}
+.stars{position:fixed;inset:0;z-index:-2;background:radial-gradient(ellipse at center, #0a0a2a 0%, #02020a 100%)}
+.star{position:absolute;width:2px;height:2px;background:white;border-radius:50%;animation:twinkle 3s infinite}
+@keyframes twinkle{0%,100%{opacity:.2}50%{opacity:1}}
+.nav{display:flex;justify-content:space-between;padding:20px 6%;align-items:center}
+.logo{font-family:'Orbitron';font-weight:900;letter-spacing:3px;font-size:22px;background:linear-gradient(90deg,#8a2be2,#00ffff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.btn{padding:12px 28px;border-radius:30px;border:none;cursor:pointer;font-weight:700;transition:.3s}
+.btn-primary{background:linear-gradient(90deg,#8a2be2,#5d00ff);color:white;box-shadow:0 0 20px rgba(138,43,226,.6)}
+.hero{display:flex;flex-direction:column;align-items:center;text-align:center;padding:60px 6% 30px}
+.hero h1{font-family:'Orbitron';font-size:clamp(32px,8vw,72px);font-weight:900;line-height:1;margin:10px 0;background:linear-gradient(180deg,#fff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero h1 span{display:block;background:linear-gradient(90deg,#8a2be2,#00ffff);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{max-width:600px;margin:20px 0 30px;color:#c4b5fd;font-size:18px}
+.auth-card{background:rgba(255,255,255,.06);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,.12);border-radius:24px;padding:28px;width:100%;max-width:420px;margin-top:20px}
+.tabs{display:flex;gap:8px;margin-bottom:20px}
+.tab{flex:1;padding:10px;border-radius:12px;background:rgba(255,255,255,.06);border:1px solid transparent;cursor:pointer;color:#aaa}
+.tab.active{background:rgba(138,43,226,.25);border-color:#8a2be2;color:white}
+.input{width:100%;padding:14px 16px;border-radius:12px;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.15);color:white;margin-bottom:12px;outline:none;font-family:'Cairo'}
+.google{width:100%;background:white;color:#111;display:flex;gap:10px;justify-content:center;align-items:center;padding:13px;border-radius:12px;border:none;font-weight:700;cursor:pointer;margin-bottom:14px}
+.divider{display:flex;align-items:center;gap:10px;color:#666;margin:12px 0}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.15)}
+.hidden{display:none}
+.status{margin-top:10px;font-size:13px;color:#00ffaa}
+</style>
+</head>
+<body>
+<div class="stars" id="stars"></div>
+<div class="nav"><div class="logo">PAT MAJOR</div></div>
+<div class="hero">
+<h1>أنا لست <span>شخصاً عادياً</span></h1>
+<p>PAT MAJOR كيان كوني يتجاوز حدود الواقع. ادخل عالمي الخاص.</p>
+<div class="auth-card" id="auth">
+<div class="tabs"><button class="tab active" onclick="switchTab('login')">دخول</button><button class="tab" onclick="switchTab('register')">جديد</button><button class="tab" onclick="switchTab('phone')">هاتف</button></div>
+<button class="google" onclick="loginGoogle()"><img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18"> المتابعة بجوجل</button>
+<div class="divider">أو</div>
+<div id="form-login"><input id="l-email" class="input" placeholder="البريد"><input id="l-pass" class="input" type="password" placeholder="كلمة السر"><button class="btn btn-primary" style="width:100%" onclick="loginEmail()">دخول</button></div>
+<div id="form-register" class="hidden"><input id="r-email" class="input" placeholder="البريد"><input id="r-pass" class="input" type="password" placeholder="كلمة سر 6 حروف"><button class="btn btn-primary" style="width:100%" onclick="registerEmail()">إنشاء حساب</button></div>
+<div id="form-phone" class="hidden"><input id="p-phone" class="input" placeholder="+20 1xxxxxxxxx"><div id="recaptcha-container"></div><button class="btn btn-primary" style="width:100%" onclick="sendPhone()">إرسال كود</button><div id="otp-area" class="hidden" style="margin-top:12px"><input id="p-otp" class="input" placeholder="كود التحقق"><button class="btn btn-primary" style="width:100%" onclick="verifyPhone()">تأكيد</button></div></div>
+<div class="status" id="status"></div>
+<div id="success" class="hidden" style="padding:20px;text-align:center"><h2>مرحباً في كون PAT MAJOR 🌌</h2><p id="userInfo" style="color:#a78bfa"></p><button class="btn" style="background:rgba(255,255,255,.1);color:white;margin-top:10px" onclick="logout()">خروج</button></div>
+</div>
+</div>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, signInWithPhoneNumber, RecaptchaVerifier, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+const firebaseConfig = {
+  apiKey: "AIzaSyBOvEzih8s8ia2A8UlkLJ2VytipaulzNk8",
+  authDomain: "pat-major.firebaseapp.com",
+  projectId: "pat-major",
+  storageBucket: "pat-major.firebasestorage.app",
+  messagingSenderId: "1046244622103",
+  appId: "1:1046244622103:web:adaf3752a721af545d4152"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+let confirmationResult = null;
+window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {size:'normal'});
+window.switchTab = (t)=>{
+document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+document.getElementById('form-login').classList.add('hidden');
+document.getElementById('form-register').classList.add('hidden');
+document.getElementById('form-phone').classList.add('hidden');
+if(t==='login'){document.querySelectorAll('.tab')[0].classList.add('active');document.getElementById('form-login').classList.remove('hidden')}
+if(t==='register'){document.querySelectorAll('.tab')[1].classList.add('active');document.getElementById('form-register').classList.remove('hidden')}
+if(t==='phone'){document.querySelectorAll('.tab')[2].classList.add('active');document.getElementById('form-phone').classList.remove('hidden')}
+}
+function setStatus(t,err=false){document.getElementById('status').style.color=err?'#ff6b6b':'#00ffaa';document.getElementById('status').innerText=t}
+window.loginGoogle = async ()=>{try{setStatus('جاري فتح جوجل...');await signInWithPopup(auth, provider)}catch(e){setStatus(e.message,true)}};
+window.registerEmail = async ()=>{try{const e=document.getElementById('r-email').value,p=document.getElementById('r-pass').value;setStatus('جاري الإنشاء...');await createUserWithEmailAndPassword(auth,e,p)}catch(e){setStatus(e.message,true)}};
+window.loginEmail = async ()=>{try{const e=document.getElementById('l-email').value,p=document.getElementById('l-pass').value;setStatus('جاري الدخول...');await signInWithEmailAndPassword(auth,e,p)}catch(e){setStatus(e.message,true)}};
+window.sendPhone = async ()=>{try{const phone=document.getElementById('p-phone').value;if(!phone.startsWith('+')){setStatus('اكتب الرقم بصيغة +20...',true);return}setStatus('جاري إرسال الكود...');confirmationResult = await signInWithPhoneNumber(auth, phone, window.recaptchaVerifier);setStatus('تم إرسال الكود!');document.getElementById('otp-area').classList.remove('hidden')}catch(e){setStatus(e.message,true)}};
+window.verifyPhone = async ()=>{try{const code=document.getElementById('p-otp').value;setStatus('جاري التأكيد...');await confirmationResult.confirm(code)}catch(e){setStatus(e.message,true)}};
+window.logout = ()=>signOut(auth);
+onAuthStateChanged(auth, (user)=>{if(user){document.getElementById('success').classList.remove('hidden');document.getElementById('userInfo').innerText=user.email||user.phoneNumber||'كيان كوني';setStatus('✅ تم الدخول بنجاح')}else{document.getElementById('success').classList.add('hidden')}});
+const starsEl=document.getElementById('stars');for(let i=0;i<120;i++){let s=document.createElement('div');s.className='star';s.style.left=Math.random()*100+'%';s.style.top=Math.random()*100+'%';s.style.animationDelay=Math.random()*3+'s';starsEl.appendChild(s)}
+</script>
+</body>
+</html>
